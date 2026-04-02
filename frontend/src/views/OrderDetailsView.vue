@@ -5,8 +5,55 @@
       <h1 class="page-title">Order Details</h1>
     </div>
 
+    <!-- Alert Confirmation Modal -->
+    <div v-if="showAlertModal" class="modal-overlay" @click.self="showAlertModal = false">
+      <div class="modal-content">
+        <h2 class="modal-title">Send Pharmacovigilance Alert</h2>
+        <div v-if="order" class="modal-body">
+          <p class="modal-message">
+            Send alert notification to the following customer?
+          </p>
+          <div class="customer-details">
+            <div class="detail-row">
+              <strong>Customer:</strong> {{ order.customer.name }}
+            </div>
+            <div class="detail-row">
+              <strong>Email:</strong> {{ order.customer.email }}
+            </div>
+            <div v-if="order.customer.phone" class="detail-row">
+              <strong>Phone:</strong> {{ order.customer.phone }}
+            </div>
+            <div class="detail-row">
+              <strong>Order ID:</strong> #{{ order.id }}
+            </div>
+            <div class="detail-row">
+              <strong>Purchase Date:</strong> {{ formatDate(order.purchase_date) }}
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <BaseButton variant="secondary" @click="showAlertModal = false" :disabled="sendingAlert">
+            Cancel
+          </BaseButton>
+          <BaseButton 
+            variant="primary" 
+            @click="confirmSendAlert"
+            :disabled="sendingAlert"
+          >
+            {{ sendingAlert ? '⏳ Sending...' : '✓ Send Alert' }}
+          </BaseButton>
+        </div>
+      </div>
+    </div>
+
     <BaseAlert v-if="loading" type="info">Loading order details...</BaseAlert>
     <BaseAlert v-else-if="error" type="error">{{ error }}</BaseAlert>
+    <BaseAlert v-else-if="alertSuccess" type="success" auto-close>
+      {{ alertSuccess }}
+    </BaseAlert>
+    <BaseAlert v-else-if="alertError" type="error" auto-close>
+      {{ alertError }}
+    </BaseAlert>
 
     <div v-else-if="order" class="details-container">
       <BaseCard title="Order Information">
@@ -45,6 +92,17 @@
             <span class="info-value">{{ order.customer.phone || 'N/A' }}</span>
           </div>
         </div>
+        <template #footer>
+          <div class="card-footer-actions">
+            <BaseButton 
+              variant="primary"
+              @click="openAlertModal"
+              :disabled="sendingAlert"
+            >
+              📧 Send Pharmacovigilance Alert
+            </BaseButton>
+          </div>
+        </template>
       </BaseCard>
 
       <BaseCard title="Order Items">
@@ -82,11 +140,16 @@ import BaseCard from '../components/common/BaseCard.vue'
 import BaseButton from '../components/common/BaseButton.vue'
 import BaseAlert from '../components/common/BaseAlert.vue'
 import orderService from '../services/orders'
+import alertService from '../services/alerts'
 
 const route = useRoute()
 const order = ref(null)
 const loading = ref(false)
 const error = ref(null)
+const showAlertModal = ref(false)
+const sendingAlert = ref(false)
+const alertSuccess = ref(null)
+const alertError = ref(null)
 
 onMounted(async () => {
   loading.value = true
@@ -106,6 +169,37 @@ function formatDate(date) {
     month: 'long',
     day: 'numeric',
   })
+}
+
+function openAlertModal() {
+  alertSuccess.value = null
+  alertError.value = null
+  showAlertModal.value = true
+}
+
+async function confirmSendAlert() {
+  if (!order.value || !order.value.order_items || order.value.order_items.length === 0) {
+    alertError.value = 'No medications found in this order'
+    return
+  }
+
+  // Get the first lot number from order items
+  const lotNumber = order.value.order_items[0].medication.lot_number
+
+  sendingAlert.value = true
+  try {
+    await alertService.sendAlert({
+      customer_id: order.value.customer.id,
+      order_id: order.value.id,
+      lot_number: lotNumber,
+    })
+    alertSuccess.value = `Alert sent successfully to ${order.value.customer.name}!`
+    showAlertModal.value = false
+  } catch (err) {
+    alertError.value = 'Failed to send alert: ' + (err.response?.data?.message || err.message)
+  } finally {
+    sendingAlert.value = false
+  }
 }
 </script>
 
@@ -217,6 +311,80 @@ function formatDate(date) {
   font-size: 12px;
 }
 
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 90%;
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-heading, #08060d);
+  margin: 0;
+  padding: 24px 24px 0;
+}
+
+.modal-body {
+  padding: 20px 24px;
+}
+
+.modal-message {
+  margin: 0 0 20px;
+  color: var(--color-text, #6b6375);
+  font-size: 15px;
+}
+
+.customer-details {
+  background-color: var(--color-surface-light, #f8f9fa);
+  border-left: 4px solid var(--color-primary, #aa3bff);
+  padding: 16px;
+  border-radius: 6px;
+  gap: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-row {
+  font-size: 14px;
+  color: var(--color-text, #6b6375);
+}
+
+.detail-row strong {
+  color: var(--color-text-heading, #08060d);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 20px 24px 24px;
+  border-top: 1px solid var(--color-border, #e5e4e7);
+}
+
+.card-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 @media (max-width: 768px) {
   .page-title {
     font-size: 24px;
@@ -229,6 +397,14 @@ function formatDate(date) {
 
   .info-grid {
     grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    width: 95%;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
   }
 }
 </style>

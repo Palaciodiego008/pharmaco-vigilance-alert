@@ -53,6 +53,15 @@
       {{ error }}
     </BaseAlert>
 
+    <BaseAlert
+      v-if="successMessage"
+      type="success"
+      auto-close
+      class="search-success"
+    >
+      {{ successMessage }}
+    </BaseAlert>
+
     <div v-if="searchResults" class="results-section">
       <div class="results-header">
         <h2>Search Results</h2>
@@ -180,6 +189,8 @@ const error = ref(null)
 const selectedOrders = ref([])
 const sendingAlerts = ref({})
 const bulkLoading = ref(false)
+const successMessage = ref(null)
+const successType = ref('success') // 'success' or 'bulk'
 
 const allSelected = computed(() => {
   if (!searchResults.value || searchResults.value.orders.length === 0) return false
@@ -187,6 +198,23 @@ const allSelected = computed(() => {
 })
 
 async function handleSearch() {
+  // Validation
+  if (!searchParams.value.lot_number.trim()) {
+    error.value = 'Lot number is required'
+    return
+  }
+
+  // Validate date range if both dates are provided
+  if (searchParams.value.start_date && searchParams.value.end_date) {
+    const startDate = new Date(searchParams.value.start_date)
+    const endDate = new Date(searchParams.value.end_date)
+
+    if (endDate < startDate) {
+      error.value = 'End date must be on or after the start date'
+      return
+    }
+  }
+
   loading.value = true
   error.value = null
   searchResults.value = null
@@ -238,6 +266,8 @@ async function sendSingleAlert(order) {
   if (!confirm(`Send alert to ${order.customer.name}?`)) return
 
   sendingAlerts.value[order.id] = true
+  successMessage.value = null
+  error.value = null
 
   try {
     await alertService.sendAlert({
@@ -245,9 +275,14 @@ async function sendSingleAlert(order) {
       order_id: order.id,
       lot_number: searchParams.value.lot_number,
     })
-    alert(`Alert sent successfully to ${order.customer.name}`)
+    successMessage.value = `Alert sent successfully to ${order.customer.name}`
+    successType.value = 'success'
+    // Clear success message after 4 seconds
+    setTimeout(() => {
+      successMessage.value = null
+    }, 4000)
   } catch (err) {
-    alert('Failed to send alert: ' + (err.response?.data?.message || err.message))
+    error.value = 'Failed to send alert: ' + (err.response?.data?.message || err.message)
   } finally {
     sendingAlerts.value[order.id] = false
   }
@@ -257,6 +292,8 @@ async function sendBulkAlerts() {
   if (!confirm(`Send alerts to ${selectedOrders.value.length} customers?`)) return
 
   bulkLoading.value = true
+  successMessage.value = null
+  error.value = null
 
   try {
     const alerts = selectedOrders.value.map((orderId) => {
@@ -272,12 +309,15 @@ async function sendBulkAlerts() {
       lot_number: searchParams.value.lot_number,
     })
 
-    alert(
-      `Bulk alert completed!\nSuccess: ${response.data.success_count}\nFailed: ${response.data.failed_count}`
-    )
+    successMessage.value = `Bulk alert completed!\nSuccess: ${response.data.success_count} | Failed: ${response.data.failed_count}`
+    successType.value = 'bulk'
     selectedOrders.value = []
+    // Clear success message after 5 seconds
+    setTimeout(() => {
+      successMessage.value = null
+    }, 5000)
   } catch (err) {
-    alert('Failed to send bulk alerts: ' + (err.response?.data?.message || err.message))
+    error.value = 'Failed to send bulk alerts: ' + (err.response?.data?.message || err.message)
   } finally {
     bulkLoading.value = false
   }
