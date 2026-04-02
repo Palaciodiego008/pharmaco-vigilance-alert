@@ -26,7 +26,7 @@ export default {
   props: {
     id: {
       type: String,
-      required: true,
+      default: () => `input-${Math.random().toString(36).substr(2, 9)}`,
     },
     modelValue: {
       type: [String, Number],
