@@ -2,48 +2,60 @@
   <div class="login-container">
     <div class="login-card">
       <div class="login-header">
-        <h1>Pharmacovigilance Alert System</h1>
-        <p>Sign in to access the system</p>
+        <h1 class="login-title">
+          <span class="login-icon">⚕️</span>
+          Pharmacovigilance Alert
+        </h1>
+        <p class="login-subtitle">Sign in to access the system</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="login-form">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            id="email"
-            v-model="credentials.email"
-            type="email"
-            required
-            placeholder="Enter your email"
-            :disabled="loading"
-          />
-        </div>
+        <BaseInput
+          v-model="credentials.email"
+          type="email"
+          label="Email Address"
+          placeholder="Enter your email"
+          :disabled="loading"
+          required
+          @keyup.enter="handleLogin"
+        />
 
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input
-            id="password"
-            v-model="credentials.password"
-            type="password"
-            required
-            placeholder="Enter your password"
-            :disabled="loading"
-          />
-        </div>
+        <BaseInput
+          v-model="credentials.password"
+          type="password"
+          label="Password"
+          placeholder="Enter your password"
+          :disabled="loading"
+          required
+          @keyup.enter="handleLogin"
+        />
 
-        <div v-if="error" class="error-message">
+        <BaseAlert
+          v-if="error"
+          type="error"
+          :closeable="true"
+          @close="error = null"
+          class="login-error"
+        >
           {{ error }}
-        </div>
+        </BaseAlert>
 
-        <button type="submit" class="btn-login" :disabled="loading">
+        <BaseButton
+          type="submit"
+          variant="primary"
+          size="lg"
+          :loading="loading"
+          :disabled="loading"
+          class="login-button"
+        >
           {{ loading ? 'Signing in...' : 'Sign In' }}
-        </button>
+        </BaseButton>
       </form>
 
       <div class="demo-credentials">
-        <p><strong>Demo Credentials:</strong></p>
-        <p>Email: admin@pharmacovigilance.com</p>
-        <p>Password: password123</p>
+        <p class="demo-title">Demo Credentials</p>
+        <p class="demo-item"><strong>Email:</strong> admin@pharmacovigilance.com</p>
+        <p class="demo-item"><strong>Password:</strong> password123</p>
       </div>
     </div>
   </div>
@@ -53,6 +65,9 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import BaseInput from '../components/common/BaseInput.vue'
+import BaseButton from '../components/common/BaseButton.vue'
+import BaseAlert from '../components/common/BaseAlert.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -66,6 +81,11 @@ const loading = ref(false)
 const error = ref(null)
 
 async function handleLogin() {
+  if (!credentials.value.email || !credentials.value.password) {
+    error.value = 'Please enter both email and password'
+    return
+  }
+
   loading.value = true
   error.value = null
 
@@ -86,13 +106,13 @@ async function handleLogin() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary, #667eea) 0%, #764ba2 100%);
   padding: 20px;
 }
 
 .login-card {
-  background: white;
-  border-radius: 10px;
+  background-color: var(--color-background, #ffffff);
+  border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   padding: 40px;
   max-width: 450px;
@@ -104,91 +124,73 @@ async function handleLogin() {
   margin-bottom: 30px;
 }
 
-.login-header h1 {
-  color: #333;
-  margin-bottom: 10px;
-  font-size: 24px;
+.login-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 15px;
 }
 
-.login-header p {
-  color: #666;
+.login-title {
+  color: var(--color-text-heading, #08060d);
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.login-subtitle {
+  color: var(--color-text-secondary, #9ca3af);
   font-size: 14px;
+  margin: 10px 0 0 0;
 }
 
 .login-form {
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
-.form-group {
-  margin-bottom: 20px;
+.login-error {
+  margin: 0;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  color: #333;
-  font-weight: 500;
-}
-
-.form-group input {
+.login-button {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 14px;
-  transition: border-color 0.3s;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.form-group input:disabled {
-  background-color: #f5f5f5;
-  cursor: not-allowed;
-}
-
-.error-message {
-  background-color: #fee;
-  color: #c33;
-  padding: 12px;
-  border-radius: 5px;
-  margin-bottom: 20px;
-  font-size: 14px;
-}
-
-.btn-login {
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: opacity 0.3s;
-}
-
-.btn-login:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.btn-login:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .demo-credentials {
-  background-color: #f8f9fa;
-  padding: 15px;
-  border-radius: 5px;
+  background-color: var(--color-surface-light, #f8f9fa);
+  border: 1px solid var(--color-border-light, #e5e7eb);
+  padding: 16px;
+  border-radius: 8px;
   font-size: 13px;
-  color: #666;
+  color: var(--color-text-secondary, #6b6375);
 }
 
-.demo-credentials p {
-  margin: 5px 0;
+.demo-title {
+  margin: 0 0 10px 0;
+  font-weight: 600;
+  color: var(--color-text, #6b6375);
+  font-size: 14px;
+}
+
+.demo-item {
+  margin: 6px 0;
+  font-size: 12px;
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 25px;
+  }
+
+  .login-title {
+    font-size: 22px;
+  }
+
+  .login-icon {
+    font-size: 2rem;
+  }
 }
 </style>
+

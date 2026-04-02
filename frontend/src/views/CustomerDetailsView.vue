@@ -1,36 +1,34 @@
 <template>
-  <AppLayout>
-    <div class="customer-details">
-      <div class="header-actions">
-        <button @click="$router.back()" class="btn-back">← Back</button>
-        <h1 class="page-title">Customer Details</h1>
-      </div>
+  <div class="customer-details">
+    <div class="header-actions">
+      <BaseButton variant="secondary" size="sm" @click="$router.back()">← Back</BaseButton>
+      <h1 class="page-title">Customer Details</h1>
+    </div>
 
-      <div v-if="loading" class="loading">Loading...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
+    <BaseAlert v-if="loading" type="info">Loading customer details...</BaseAlert>
+    <BaseAlert v-else-if="error" type="error">{{ error }}</BaseAlert>
 
-      <div v-else-if="customer" class="details-container">
-        <div class="info-card">
-          <h2>Customer Information</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <label>Name:</label>
-              <span>{{ customer.name }}</span>
-            </div>
-            <div class="info-item">
-              <label>Email:</label>
-              <span>{{ customer.email }}</span>
-            </div>
-            <div class="info-item">
-              <label>Phone:</label>
-              <span>{{ customer.phone || 'N/A' }}</span>
-            </div>
+    <div v-else-if="customer" class="details-container">
+      <BaseCard title="Customer Information">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Name:</label>
+            <span class="info-value">{{ customer.name }}</span>
+          </div>
+          <div class="info-item">
+            <label>Email:</label>
+            <span class="info-value">{{ customer.email }}</span>
+          </div>
+          <div class="info-item">
+            <label>Phone:</label>
+            <span class="info-value">{{ customer.phone || 'N/A' }}</span>
           </div>
         </div>
+      </BaseCard>
 
-        <div class="info-card">
-          <h2>Order History ({{ customer.orders?.length || 0 }} orders)</h2>
-          <table v-if="customer.orders?.length" class="orders-table">
+      <BaseCard :title="`Order History (${customer.orders?.length || 0} orders)`">
+        <div v-if="customer.orders?.length" class="orders-table-container">
+          <table class="orders-table">
             <thead>
               <tr>
                 <th>Order ID</th>
@@ -47,24 +45,32 @@
                 <td>{{ order.order_items.length }}</td>
                 <td>${{ order.total_amount }}</td>
                 <td>
-                  <button @click="$router.push(`/orders/${order.id}`)" class="btn-view">
+                  <BaseButton
+                    variant="primary"
+                    size="sm"
+                    @click="$router.push(`/orders/${order.id}`)"
+                  >
                     View
-                  </button>
+                  </BaseButton>
                 </td>
               </tr>
             </tbody>
           </table>
-          <p v-else class="no-data">No orders found</p>
         </div>
-      </div>
+        <div v-else class="no-data">
+          <p>No orders found for this customer.</p>
+        </div>
+      </BaseCard>
     </div>
-  </AppLayout>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import AppLayout from '../components/AppLayout.vue'
+import BaseCard from '../components/common/BaseCard.vue'
+import BaseButton from '../components/common/BaseButton.vue'
+import BaseAlert from '../components/common/BaseAlert.vue'
 import customerService from '../services/customers'
 
 const route = useRoute()
@@ -104,26 +110,14 @@ function formatDate(date) {
   align-items: center;
   gap: 20px;
   margin-bottom: 30px;
-}
-
-.btn-back {
-  padding: 8px 16px;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+  flex-wrap: wrap;
 }
 
 .page-title {
   font-size: 32px;
-  color: #333;
+  font-weight: 600;
+  color: var(--color-text-heading, #08060d);
   margin: 0;
-}
-
-.loading, .error-message {
-  text-align: center;
-  padding: 40px;
 }
 
 .details-container {
@@ -132,39 +126,33 @@ function formatDate(date) {
   gap: 20px;
 }
 
-.info-card {
-  background: white;
-  padding: 25px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.info-card h2 {
-  margin: 0 0 20px 0;
-  font-size: 20px;
-  color: #333;
-}
-
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
+  gap: 16px;
 }
 
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
 .info-item label {
   font-weight: 600;
-  color: #666;
-  font-size: 14px;
+  color: var(--color-text-secondary, #9ca3af);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.info-item span {
-  color: #333;
+.info-value {
+  color: var(--color-text-heading, #08060d);
+  font-size: 15px;
+}
+
+.orders-table-container {
+  overflow-x: auto;
 }
 
 .orders-table {
@@ -176,31 +164,41 @@ function formatDate(date) {
 .orders-table td {
   padding: 12px;
   text-align: left;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--color-border, #e5e4e7);
 }
 
 .orders-table th {
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-light, #f8f9fa);
   font-weight: 600;
+  color: var(--color-text-heading, #08060d);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.btn-view {
-  padding: 6px 12px;
-  background-color: #667eea;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.btn-view:hover {
-  background-color: #5568d3;
+.orders-table tr:hover {
+  background-color: var(--color-surface-light, #f8f9fa);
 }
 
 .no-data {
   text-align: center;
-  color: #666;
+  color: var(--color-text-secondary, #9ca3af);
   padding: 20px;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 24px;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

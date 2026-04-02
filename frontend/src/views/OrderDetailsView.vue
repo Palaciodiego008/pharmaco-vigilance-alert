@@ -1,57 +1,54 @@
 <template>
-  <AppLayout>
-    <div class="order-details">
-      <div class="header-actions">
-        <button @click="$router.back()" class="btn-back">← Back</button>
-        <h1 class="page-title">Order Details</h1>
-      </div>
+  <div class="order-details">
+    <div class="header-actions">
+      <BaseButton variant="secondary" size="sm" @click="$router.back()">← Back</BaseButton>
+      <h1 class="page-title">Order Details</h1>
+    </div>
 
-      <div v-if="loading" class="loading">Loading...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
+    <BaseAlert v-if="loading" type="info">Loading order details...</BaseAlert>
+    <BaseAlert v-else-if="error" type="error">{{ error }}</BaseAlert>
 
-      <div v-else-if="order" class="details-container">
-        <div class="info-card">
-          <h2>Order Information</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <label>Order ID:</label>
-              <span>#{{ order.id }}</span>
-            </div>
-            <div class="info-item">
-              <label>Purchase Date:</label>
-              <span>{{ formatDate(order.purchase_date) }}</span>
-            </div>
-            <div class="info-item">
-              <label>Status:</label>
-              <span class="badge">{{ order.status }}</span>
-            </div>
-            <div class="info-item">
-              <label>Total Amount:</label>
-              <span class="amount">${{ order.total_amount }}</span>
-            </div>
+    <div v-else-if="order" class="details-container">
+      <BaseCard title="Order Information">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Order ID:</label>
+            <span class="info-value">#{{ order.id }}</span>
+          </div>
+          <div class="info-item">
+            <label>Purchase Date:</label>
+            <span class="info-value">{{ formatDate(order.purchase_date) }}</span>
+          </div>
+          <div class="info-item">
+            <label>Status:</label>
+            <span class="badge">{{ order.status }}</span>
+          </div>
+          <div class="info-item">
+            <label>Total Amount:</label>
+            <span class="amount">${{ order.total_amount }}</span>
           </div>
         </div>
+      </BaseCard>
 
-        <div class="info-card">
-          <h2>Customer Information</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <label>Name:</label>
-              <span>{{ order.customer.name }}</span>
-            </div>
-            <div class="info-item">
-              <label>Email:</label>
-              <span>{{ order.customer.email }}</span>
-            </div>
-            <div class="info-item">
-              <label>Phone:</label>
-              <span>{{ order.customer.phone || 'N/A' }}</span>
-            </div>
+      <BaseCard title="Customer Information">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Name:</label>
+            <span class="info-value">{{ order.customer.name }}</span>
+          </div>
+          <div class="info-item">
+            <label>Email:</label>
+            <span class="info-value">{{ order.customer.email }}</span>
+          </div>
+          <div class="info-item">
+            <label>Phone:</label>
+            <span class="info-value">{{ order.customer.phone || 'N/A' }}</span>
           </div>
         </div>
+      </BaseCard>
 
-        <div class="info-card">
-          <h2>Order Items</h2>
+      <BaseCard title="Order Items">
+        <div class="items-table-container">
           <table class="items-table">
             <thead>
               <tr>
@@ -73,15 +70,17 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </BaseCard>
     </div>
-  </AppLayout>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import AppLayout from '../components/AppLayout.vue'
+import BaseCard from '../components/common/BaseCard.vue'
+import BaseButton from '../components/common/BaseButton.vue'
+import BaseAlert from '../components/common/BaseAlert.vue'
 import orderService from '../services/orders'
 
 const route = useRoute()
@@ -121,26 +120,14 @@ function formatDate(date) {
   align-items: center;
   gap: 20px;
   margin-bottom: 30px;
-}
-
-.btn-back {
-  padding: 8px 16px;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+  flex-wrap: wrap;
 }
 
 .page-title {
   font-size: 32px;
-  color: #333;
+  font-weight: 600;
+  color: var(--color-text-heading, #08060d);
   margin: 0;
-}
-
-.loading, .error-message {
-  text-align: center;
-  padding: 40px;
 }
 
 .details-container {
@@ -149,55 +136,51 @@ function formatDate(date) {
   gap: 20px;
 }
 
-.info-card {
-  background: white;
-  padding: 25px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.info-card h2 {
-  margin: 0 0 20px 0;
-  font-size: 20px;
-  color: #333;
-}
-
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
+  gap: 16px;
 }
 
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
 .info-item label {
   font-weight: 600;
-  color: #666;
-  font-size: 14px;
+  color: var(--color-text-secondary, #9ca3af);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.info-item span {
-  color: #333;
+.info-value {
+  color: var(--color-text-heading, #08060d);
+  font-size: 15px;
 }
 
 .badge {
   display: inline-block;
   padding: 4px 12px;
-  background-color: #28a745;
+  background-color: var(--color-success, #28a745);
   color: white;
   border-radius: 20px;
   font-size: 12px;
   text-transform: uppercase;
+  font-weight: 600;
+  width: fit-content;
 }
 
 .amount {
   font-size: 24px;
-  font-weight: bold;
-  color: #667eea;
+  font-weight: 700;
+  color: var(--color-primary, #667eea);
+}
+
+.items-table-container {
+  overflow-x: auto;
 }
 
 .items-table {
@@ -209,20 +192,43 @@ function formatDate(date) {
 .items-table td {
   padding: 12px;
   text-align: left;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--color-border, #e5e4e7);
 }
 
 .items-table th {
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-light, #f8f9fa);
   font-weight: 600;
+  color: var(--color-text-heading, #08060d);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.items-table tr:hover {
+  background-color: var(--color-surface-light, #f8f9fa);
 }
 
 .lot-number {
-  background-color: #dc3545;
+  background-color: var(--color-error, #dc3545);
   color: white;
-  padding: 2px 8px;
+  padding: 3px 8px;
   border-radius: 4px;
-  font-weight: bold;
+  font-weight: 600;
   font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 24px;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

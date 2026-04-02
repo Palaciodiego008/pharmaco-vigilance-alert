@@ -1,52 +1,50 @@
 <template>
-  <AppLayout>
-    <div class="alerts-page">
+  <div class="alerts-page">
+    <div class="page-header">
       <h1 class="page-title">Alert History</h1>
-
-      <div v-if="loading" class="loading">Loading...</div>
-      <div v-else-if="error" class="error-message">{{ error }}</div>
-
-      <div v-else class="alerts-container">
-        <div class="alerts-header">
-          <h2>Sent Alerts ({{ alerts.length }})</h2>
-        </div>
-
-        <div v-if="alerts.length === 0" class="no-alerts">
-          <p>No alerts have been sent yet.</p>
-        </div>
-
-        <div v-else class="alerts-table-container">
-          <table class="alerts-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Customer</th>
-                <th>Order ID</th>
-                <th>Type</th>
-                <th>Sent By</th>
-                <th>Sent At</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="alert in alerts" :key="alert.id">
-                <td>#{{ alert.id }}</td>
-                <td>{{ alert.customer.name }}</td>
-                <td>#{{ alert.order_id }}</td>
-                <td><span class="badge">{{ alert.alert_type }}</span></td>
-                <td>{{ alert.user.name }}</td>
-                <td>{{ formatDateTime(alert.sent_at) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <p class="page-subtitle">View all sent alerts and notifications to customers.</p>
     </div>
-  </AppLayout>
+
+    <BaseAlert v-if="loading" type="info">Loading alert history...</BaseAlert>
+    <BaseAlert v-else-if="error" type="error">{{ error }}</BaseAlert>
+
+    <BaseCard v-else :title="`Sent Alerts (${alerts.length})`">
+      <div v-if="alerts.length === 0" class="no-alerts">
+        <p>No alerts have been sent yet.</p>
+      </div>
+
+      <div v-else class="alerts-table-container">
+        <table class="alerts-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Order ID</th>
+              <th>Type</th>
+              <th>Sent By</th>
+              <th>Sent At</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="alert in alerts" :key="alert.id">
+              <td>#{{ alert.id }}</td>
+              <td>{{ alert.customer.name }}</td>
+              <td>#{{ alert.order_id }}</td>
+              <td><span class="badge">{{ alert.alert_type }}</span></td>
+              <td>{{ alert.user.name }}</td>
+              <td>{{ formatDateTime(alert.sent_at) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </BaseCard>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import AppLayout from '../components/AppLayout.vue'
+import BaseCard from '../components/common/BaseCard.vue'
+import BaseAlert from '../components/common/BaseAlert.vue'
 import alertService from '../services/alerts'
 
 const alerts = ref([])
@@ -82,34 +80,28 @@ function formatDateTime(datetime) {
   margin: 0 auto;
 }
 
-.page-title {
-  font-size: 32px;
-  color: #333;
+.page-header {
   margin-bottom: 30px;
 }
 
-.loading, .error-message {
-  text-align: center;
-  padding: 40px;
+.page-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--color-text-heading, #08060d);
+  margin: 0 0 8px 0;
 }
 
-.alerts-container {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.alerts-header h2 {
-  margin: 0 0 20px 0;
-  font-size: 20px;
-  color: #333;
+.page-subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary, #9ca3af);
+  margin: 0;
 }
 
 .no-alerts {
   text-align: center;
-  padding: 40px;
-  color: #666;
+  padding: 40px 20px;
+  color: var(--color-text-secondary, #9ca3af);
+  font-size: 14px;
 }
 
 .alerts-table-container {
@@ -125,26 +117,45 @@ function formatDateTime(datetime) {
 .alerts-table td {
   padding: 12px;
   text-align: left;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--color-border, #e5e4e7);
 }
 
 .alerts-table th {
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-light, #f8f9fa);
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-heading, #08060d);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .alerts-table tr:hover {
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-light, #f8f9fa);
 }
 
 .badge {
   display: inline-block;
   padding: 4px 12px;
-  background-color: #667eea;
+  background-color: var(--color-primary, #667eea);
   color: white;
   border-radius: 20px;
   font-size: 12px;
   text-transform: uppercase;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 24px;
+  }
+
+  .alerts-table {
+    font-size: 13px;
+  }
+
+  .alerts-table th,
+  .alerts-table td {
+    padding: 8px;
+  }
 }
 </style>

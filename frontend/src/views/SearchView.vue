@@ -1,94 +1,101 @@
 <template>
-  <AppLayout>
-    <div class="search-page">
+  <div class="search-page">
+    <div class="page-header">
       <h1 class="page-title">Medication Search</h1>
+      <p class="page-subtitle">Find orders by lot number and send alerts to customers.</p>
+    </div>
 
-      <div class="search-card">
-        <h2>Search Orders by Lot Number</h2>
-        
-        <form @submit.prevent="handleSearch" class="search-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="lot_number">Lot Number *</label>
-              <input
-                id="lot_number"
-                v-model="searchParams.lot_number"
-                type="text"
-                required
-                placeholder="e.g., 951357"
-                :disabled="loading"
-              />
-            </div>
+    <BaseCard class="search-card" title="Search Orders by Lot Number">
+      <form @submit.prevent="handleSearch" class="search-form">
+        <div class="form-row">
+          <BaseInput
+            v-model="searchParams.lot_number"
+            type="text"
+            label="Lot Number *"
+            placeholder="e.g., 951357"
+            :disabled="loading"
+            required
+          />
 
-            <div class="form-group">
-              <label for="start_date">Start Date</label>
-              <input
-                id="start_date"
-                v-model="searchParams.start_date"
-                type="date"
-                :disabled="loading"
-              />
-            </div>
+          <BaseInput
+            v-model="searchParams.start_date"
+            type="date"
+            label="Start Date"
+            :disabled="loading"
+          />
 
-            <div class="form-group">
-              <label for="end_date">End Date</label>
-              <input
-                id="end_date"
-                v-model="searchParams.end_date"
-                type="date"
-                :disabled="loading"
-              />
-            </div>
-          </div>
+          <BaseInput
+            v-model="searchParams.end_date"
+            type="date"
+            label="End Date"
+            :disabled="loading"
+          />
+        </div>
 
-          <button type="submit" class="btn-search" :disabled="loading">
-            {{ loading ? 'Searching...' : 'Search' }}
-          </button>
-        </form>
+        <BaseButton
+          type="submit"
+          variant="primary"
+          :loading="loading"
+          :disabled="loading"
+        >
+          {{ loading ? 'Searching...' : 'Search' }}
+        </BaseButton>
+      </form>
+    </BaseCard>
+
+    <BaseAlert
+      v-if="error"
+      type="error"
+      :closeable="true"
+      @close="error = null"
+      class="search-error"
+    >
+      {{ error }}
+    </BaseAlert>
+
+    <div v-if="searchResults" class="results-section">
+      <div class="results-header">
+        <h2>Search Results</h2>
+        <div class="results-info">
+          <span class="badge">{{ searchResults.orders_count }} orders found</span>
+          <span class="lot-badge">Lot: {{ searchResults.search_params.lot_number }}</span>
+        </div>
       </div>
 
-      <div v-if="error" class="error-message">
-        {{ error }}
+      <div v-if="searchResults.orders_count > 0" class="bulk-actions">
+        <BaseButton
+          variant="secondary"
+          size="sm"
+          :disabled="bulkLoading"
+          @click="selectAll"
+        >
+          Select All
+        </BaseButton>
+        <BaseButton
+          variant="secondary"
+          size="sm"
+          :disabled="bulkLoading"
+          @click="deselectAll"
+        >
+          Deselect All
+        </BaseButton>
+        <BaseButton
+          variant="danger"
+          size="sm"
+          :disabled="selectedOrders.length === 0 || bulkLoading"
+          :loading="bulkLoading"
+          @click="sendBulkAlerts"
+        >
+          {{ bulkLoading ? 'Sending...' : `Send Alerts (${selectedOrders.length})` }}
+        </BaseButton>
       </div>
 
-      <div v-if="searchResults" class="results-section">
-        <div class="results-header">
-          <h2>Search Results</h2>
-          <div class="results-info">
-            <span class="badge">{{ searchResults.orders_count }} orders found</span>
-            <span class="lot-badge">Lot: {{ searchResults.search_params.lot_number }}</span>
-          </div>
-        </div>
+      <div v-if="searchResults.orders_count === 0" class="no-results">
+        <p>No orders found for the specified criteria.</p>
+      </div>
 
-        <div v-if="searchResults.orders_count > 0" class="bulk-actions">
-          <button
-            @click="selectAll"
-            class="btn-secondary"
-            :disabled="bulkLoading"
-          >
-            Select All
-          </button>
-          <button
-            @click="deselectAll"
-            class="btn-secondary"
-            :disabled="bulkLoading"
-          >
-            Deselect All
-          </button>
-          <button
-            @click="sendBulkAlerts"
-            class="btn-danger"
-            :disabled="selectedOrders.length === 0 || bulkLoading"
-          >
-            {{ bulkLoading ? 'Sending...' : `Send Alerts (${selectedOrders.length})` }}
-          </button>
-        </div>
-
-        <div v-if="searchResults.orders_count === 0" class="no-results">
-          <p>No orders found for the specified criteria.</p>
-        </div>
-
-        <div v-else class="orders-table-container">
+      <BaseCard v-else class="orders-card">
+        <div class="orders-table-container">
           <table class="orders-table">
             <thead>
               <tr>
@@ -144,15 +151,18 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </BaseCard>
     </div>
-  </AppLayout>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import AppLayout from '../components/AppLayout.vue'
+import BaseCard from '../components/common/BaseCard.vue'
+import BaseButton from '../components/common/BaseButton.vue'
+import BaseInput from '../components/common/BaseInput.vue'
+import BaseAlert from '../components/common/BaseAlert.vue'
 import medicationService from '../services/medications'
 import alertService from '../services/alerts'
 
@@ -280,88 +290,48 @@ async function sendBulkAlerts() {
   margin: 0 auto;
 }
 
+.page-header {
+  margin-bottom: 30px;
+}
+
 .page-title {
   font-size: 32px;
-  color: #333;
-  margin-bottom: 30px;
+  font-weight: 600;
+  color: var(--color-text-heading, #08060d);
+  margin: 0 0 8px 0;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary, #9ca3af);
+  margin: 0;
 }
 
 .search-card {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
-.search-card h2 {
-  margin: 0 0 20px 0;
-  font-size: 20px;
-  color: #333;
+.search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 16px;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  color: #333;
-  font-weight: 500;
-  font-size: 14px;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 14px;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.btn-search {
-  width: 100%;
-  padding: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.btn-search:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.btn-search:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.error-message {
-  background-color: #fee;
-  color: #c33;
-  padding: 15px;
-  border-radius: 5px;
+.search-error {
   margin-bottom: 20px;
 }
 
 .results-section {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  background-color: var(--color-background, #ffffff);
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #e5e4e7);
 }
 
 .results-header {
@@ -369,84 +339,59 @@ async function sendBulkAlerts() {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .results-header h2 {
   margin: 0;
   font-size: 20px;
-  color: #333;
+  color: var(--color-text-heading, #08060d);
+  font-weight: 600;
 }
 
 .results-info {
   display: flex;
-  gap: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .badge {
-  background-color: #667eea;
+  background-color: var(--color-primary, #667eea);
   color: white;
-  padding: 5px 15px;
+  padding: 6px 12px;
   border-radius: 20px;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .lot-badge {
-  background-color: #dc3545;
+  background-color: var(--color-error, #dc3545);
   color: white;
-  padding: 5px 15px;
+  padding: 6px 12px;
   border-radius: 20px;
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .bulk-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 20px;
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 5px;
-}
-
-.btn-secondary {
-  padding: 8px 16px;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background-color: #5a6268;
-}
-
-.btn-danger {
-  padding: 8px 16px;
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background-color: #c82333;
-}
-
-.btn-secondary:disabled,
-.btn-danger:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  padding: 16px;
+  background-color: var(--color-surface-light, #f8f9fa);
+  border-radius: 6px;
+  flex-wrap: wrap;
 }
 
 .no-results {
   text-align: center;
-  padding: 40px;
-  color: #666;
+  padding: 40px 20px;
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.orders-card {
+  margin-top: 20px;
 }
 
 .orders-table-container {
@@ -462,31 +407,34 @@ async function sendBulkAlerts() {
 .orders-table td {
   padding: 12px;
   text-align: left;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--color-border, #e5e4e7);
 }
 
 .orders-table th {
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-light, #f8f9fa);
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-heading, #08060d);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .orders-table tr:hover {
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-light, #f8f9fa);
 }
 
 .actions {
   display: flex;
-  gap: 5px;
+  gap: 8px;
 }
 
 .btn-icon {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 18px;
-  padding: 5px;
-  transition: transform 0.2s;
+  font-size: 16px;
+  padding: 4px;
+  transition: transform 0.2s ease;
 }
 
 .btn-icon:hover {
@@ -498,11 +446,31 @@ async function sendBulkAlerts() {
   cursor: not-allowed;
 }
 
-.btn-alert {
-  filter: grayscale(0);
+.btn-alert:hover {
+  filter: brightness(1.1);
 }
 
-.btn-alert:hover {
-  filter: grayscale(0) brightness(1.2);
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 24px;
+  }
+
+  .results-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .bulk-actions {
+    flex-direction: column;
+  }
+
+  .orders-table {
+    font-size: 13px;
+  }
+
+  .orders-table th,
+  .orders-table td {
+    padding: 8px;
+  }
 }
 </style>
