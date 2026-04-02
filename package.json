@@ -1,0 +1,33 @@
+{
+  "name": "pharmacovigilance-alert-system",
+  "version": "1.0.0",
+  "description": "Pharmacovigilance Alert System - Monorepo",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run backend:serve\" \"npm run frontend:dev\"",
+    "frontend:dev": "npm run dev --workspace=frontend",
+    "frontend:build": "npm run build --workspace=frontend",
+    "frontend:preview": "npm run preview --workspace=frontend",
+    "backend:serve": "cd backend && php artisan serve",
+    "backend:migrate": "cd backend && php artisan migrate",
+    "backend:seed": "cd backend && php artisan db:seed",
+    "backend:fresh": "cd backend && php artisan migrate:fresh --seed",
+    "setup": "bash setup.sh",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build",
+    "docker:logs": "docker-compose logs -f",
+    "docker:migrate": "docker exec -it pharmacovigilance_backend php artisan migrate:fresh --seed"
+  },
+  "keywords": [
+    "pharmacovigilance",
+    "alert-system",
+    "laravel",
+    "vue"
+  ],
+  "author": "",
+  "license": "MIT"
+}
